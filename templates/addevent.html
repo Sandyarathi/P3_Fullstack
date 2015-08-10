@@ -1,0 +1,21 @@
+<!-- extend base layout -->
+{% extends "base.html" %}
+
+{% block events %}
+<div class="col-md-9">
+	<form action= "{{url_for('addEvent', category_id = category_id)}}" method = 'POST'>
+
+	<p>Name:</p>
+	<input type = 'text' size='30' name = 'name' required>
+	<br><br>
+	<p>Price:</p>
+	<input type = 'text' size='30' name = 'price' required>
+	<br><br>
+	<p>Description:</p>
+	<input type = 'text' size='30' name = 'description' required>
+	<br><br>
+	<input type='submit' value='Add event'>
+
+	<a href= '{{url_for('showEvents', category_id= category_id)}}'>Cancel</a>
+</div>
+{% endblock %}
