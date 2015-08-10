@@ -12,7 +12,7 @@
 	<input type = 'text' size='30' name = 'price' placeholder = '{{event.price}}'>
 	<br><br>
 	<p>Description:</p>
-	<input type = 'text' size='30' name = 'description'>
+	<input type = 'text' size='30' name = 'description' placeholder = '{{event.description}}'>
 	<br><br>
 	<input type='submit' value='Edit'>
 	<a href= '{{url_for('showEvents', category_id= event.category_id)}}'>Cancel</a>

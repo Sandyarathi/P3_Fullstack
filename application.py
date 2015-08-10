@@ -19,12 +19,6 @@ def showAllEventJSON(category_id):
     return jsonify(Events=[i.serialize for i in items])
 
 
-# ADD JSON ENDPOINT HERE
-@app.route('/categories/<int:category_id>/events/<int:event_id>/JSON')
-def eventJSON(category_id, event_id):
-    event = session.query(Event).filter_by(id=event_id).one()
-    return jsonify(Event=event.serialize)
-
 
 @app.route('/')
 def home():
@@ -38,7 +32,7 @@ def showEvents(category_id):
     category = session.query(Category).filter_by(id=category_id).one()
     events = session.query(Event).filter_by(category_id=category_id)
 
-    return render_template('showevent.html', categories=session.query(Category), events = events, category = category)
+    return render_template('showevent.html', categories=session.query(Category), category_id=category_id, events = events, category = category)
 
 
 @app.route('/categories/<int:category_id>/add', methods=['GET', 'POST'])
@@ -71,8 +65,7 @@ def editEvent(category_id, event_id):
         session.commit()
         return redirect(url_for('showEvents', category_id=editedEvent.category_id))
     else:
-        return render_template(
-            'editevent.html', category_id=category_id, event= editedEvent)
+        return render_template('editevent.html', categories=session.query(Category), category_id=category_id, event= editedEvent)
 
 
 @app.route('/categories/<int:category_id>/<int:event_id>/delete',
@@ -84,7 +77,7 @@ def deleteEvent(category_id, event_id):
         session.commit()
         return redirect(url_for('showEvents', category_id=category_id))
     else:
-        return render_template('deleteevent.html', event=eventToDelete)
+        return render_template('deleteevent.html', categories=session.query(Category), category_id=category_id, event=eventToDelete)
 
 
 if __name__ == '__main__':
