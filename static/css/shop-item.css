@@ -26,6 +26,20 @@ body {
     padding: 9px;
     color: #333;
 }
+.login_area
+{
+	margin: 0 auto;
+	width:40%; /* value of your choice which suits your alignment */
+  	top: 0; left: 0; bottom: 0; right: 0;
+	padding: 45px 15px 15px;
+
+	background-color: #FFF;
+	border-style: solid;
+	border-color: #DDD;
+	border-width: 1px;
+	border-radius: 4px 4px 0px 0px;
+	box-shadow: none;
+}
 
 footer {
     margin: 50px 0;

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{% for cat in categories -%}
+<category>
+<name>{{cat.name}}</name>
+{% for ev in events -%}
+{% if ev.category_id == cat.id -%}
+<event>
+    <name>{{ev.name}}</name>
+    <price>{{ev.price}}</price>
+    <description>{{ev.description}}</description>
+</event>
+{%- endif %}
+{%- endfor %}
+</category>
+{%- endfor %}

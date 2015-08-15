@@ -1,5 +1,5 @@
 <!-- extend base layout -->
-{% extends "main.html" %}
+{% extends "publicmain.html" %}
 
 {% block events %}
 <div class="col-md-9">
@@ -20,15 +20,10 @@
                     <h4><a href="#">{{ev.name}}</a>
                     </h4>
                     <p>{{ev.description}}</p>
-                    <p>When? </p>
+                    <p >When? </p>
                 </div>
                 <div class="ratings">
-                    
-                    {%if user_id == ev.user_id%}
-                    <a href='{{url_for('editEvent', category_id = ev.category_id, event_id = ev.id) }}'>Edit</a>
-                    <br>
-                    <a href='{{url_for('deleteEvent', category_id = ev.category_id, event_id = ev.id) }}'>Delete</a>
-                    {%endif%}
+                
                         <!--p>
                             <span class="glyphicon glyphicon-star"></span>
                             <span class="glyphicon glyphicon-star"></span>
