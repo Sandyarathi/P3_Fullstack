@@ -60,7 +60,7 @@ def showLogin():
     # return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
 
-
+# Google Login connection function
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
@@ -141,7 +141,6 @@ def gconnect():
     # see if user exists, if it doesn't make a new one
     user_id = getUserID(data["email"])
 
-    print "Debug ", user_id
     if not user_id:
         user_id = createUser(login_session)
     login_session['user_id'] = user_id
@@ -158,9 +157,9 @@ def gconnect():
     print "done!"
     return output
 
+
 # User Helper Functions
-
-
+# ----------------------
 def createUser(login_session):
     newUser = User(name=login_session['username'],
                    email=login_session['email'],
@@ -184,7 +183,7 @@ def getUserID(email):
         return None
 
 
-# DISCONNECT - Revoke a current user's token and reset their login_session
+# Google disconnect-Revoke a current user's token and reset their login_session
 @app.route('/gdisconnect')
 def gdisconnect():
     # Only disconnect a connected user.
@@ -225,7 +224,7 @@ def showAllasApiXML():
     events = session.query(Event)
     return render_template('api.xml', categories=categories, events=events)
 
-
+# Home
 @app.route('/')
 @app.route('/all')
 def home():
@@ -263,6 +262,8 @@ def addEvent(category_id):
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
+        # a user can add a image URL or a local path to upload an image
+        # we need to differentiate the input
         use_local_image = False
         if request.form['url_image']:
             print request.form['url_image']
@@ -374,8 +375,7 @@ def deleteEvent(category_id, event_id):
 
 # image upload functionality
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
 def upload_file():
@@ -384,8 +384,7 @@ def upload_file():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            return redirect(url_for('uploaded_file',
-                                    filename=filename))
+            return redirect(url_for('uploaded_file', filename=filename))
 
 
 # Disconnect based on provider
