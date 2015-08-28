@@ -1,4 +1,4 @@
-Nanodegree P§ Item Catalog
+Nanodegree P3 Item Catalog
 ================================
 
 Creating a web application using flask, SQLite and OAuthentification

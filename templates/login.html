@@ -74,6 +74,7 @@ function signInCallback(authResult) {
     cookie     : true,  // enable cookies to allow the server to access 
                         // the session
     xfbml      : true,  // parse social plugins on this page
+    oauth      : true,
     version    : 'v2.4' // use version 2.4
   });
 
@@ -91,6 +92,7 @@ function signInCallback(authResult) {
   // Here we run a very simple test of the Graph API after login is
   // successful.  See statusChangeCallback() for when this call is made.
   function sendTokenToServer() {
+    console.log('sendTokenToServer is called.... ');
     var access_token = FB.getAuthResponse()['accessToken'];
     console.log(access_token)
     console.log('Welcome!  Fetching your information.... ');
@@ -124,7 +126,6 @@ function signInCallback(authResult) {
 </script>
 
   <button>
-    <!-- sendTokenToServer() is implemented in application.py -->
     <fb:login-button scope="public_profile,email" onlogin="sendTokenToServer();">
     <a href='javascript:sendTokenToServer()'>Facebook Login</a>
     </fb:login-button>
