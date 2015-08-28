@@ -30,6 +30,12 @@ from werkzeug import secure_filename
 # upload folder will be saved locally
 UPLOAD_FOLDER = 'static/images/'
 
+# check if images folder exists, if not create a new one
+if not os.path.exists(os.path.join(os.getcwd(), UPLOAD_FOLDER)):
+    os.makedirs(os.path.join(os.getcwd(), UPLOAD_FOLDER))
+    print os.getcwd()
+    print "makedir", os.path.join(os.getcwd(), UPLOAD_FOLDER)
+
 ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'JPG', 'jpeg', 'JPEG',
                          'gif', 'GIF'])
 
@@ -64,11 +70,11 @@ def showLogin():
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Validate state token
-    print "Debug 1: "
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
         return response
+
     # Obtain authorization code
     code = request.data
     print "Debug 2: ", code
@@ -182,7 +188,7 @@ def getUserID(email):
     except:
         return None
 
-
+# These authentification codes are taken from https://github.com/udacity/ud330/
 # Google disconnect-Revoke a current user's token and reset their login_session
 @app.route('/gdisconnect')
 def gdisconnect():
@@ -207,12 +213,96 @@ def gdisconnect():
         response.headers['Content-Type'] = 'application/json'
         return response
 
+# Facebook login connection
+@app.route('/fbconnect', methods=['POST'])
+def fbconnect():
+    api_version = '2.4'
+    
+    # prevent cross-site request forgeries (CSRF)
+    if request.args.get('state') != login_session['state']:
+        response = make_response(json.dumps('Invalid state parameter.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    access_token = request.data
+    print "access token received %s " % access_token
+
+    app_id = json.loads(open('fb_client_secrets.json', 'r').read())[
+        'web']['app_id']
+    app_secret = json.loads(
+        open('fb_client_secrets.json', 'r').read())['web']['app_secret']
+    url = 'https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=%s&client_secret=%s&fb_exchange_token=%s' % (
+        app_id, app_secret, access_token)
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+
+    # Use token to get user info from API
+    userinfo_url = "https://graph.facebook.com/v{API}/me".format(API=api_version)
+    # strip expire tag from access token
+    token = result.split("&")[0]
+
+
+    url = url = 'https://graph.facebook.com/v{API}/me?{Token}&fields=name,id,email'.format(API=api_version, Token=token)
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+    # print "url sent for API access:%s"% url
+    # print "API JSON result: %s" % result
+    data = json.loads(result)
+    login_session['provider'] = 'facebook'
+    login_session['username'] = data["name"]
+    login_session['email'] = data["email"]
+    login_session['facebook_id'] = data["id"]
+
+    # The token must be stored in the login_session in order to properly logout
+    # let's strip out the information before the equals sign in our token
+    stored_token = token.split("=")[1]
+    login_session['access_token'] = stored_token
+
+    # Get user picture
+    url = 'https://graph.facebook.com/v{API}/me/picture?{Token}&redirect=0&height=200&width=200'.format(API=api_version, Token=token)
+    h = httplib2.Http()
+    result = h.request(url, 'GET')[1]
+    data = json.loads(result)
+
+    login_session['picture'] = data["data"]["url"]
+
+    # see if user exists
+    user_id = getUserID(login_session['email'])
+    if not user_id:
+        user_id = createUser(login_session)
+    login_session['user_id'] = user_id
+
+    output = ''
+    output += '<h1>Welcome, '
+    output += login_session['username']
+
+    output += '!</h1>'
+    output += '<img src="'
+    output += login_session['picture']
+    output += ' "style = "width: 300px; height: 300px;border-radius: 150px; \
+                -webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+
+    flash("Now logged in as %s" % login_session['username'])
+    return output
+
+
+@app.route('/fbdisconnect')
+def fbdisconnect():
+    facebook_id = login_session['facebook_id']
+    # The access token must me included to successfully logout
+    access_token = login_session['access_token']
+    url = 'https://graph.facebook.com/%s/permissions?access_token=%s' \
+           % (facebook_id,access_token)
+    h = httplib2.Http()
+    result = h.request(url, 'DELETE')[1]
+    return "you have been logged out"
+
 
 # ----------------------------------------------------------------------------
 
 # JSON API
 @app.route('/categories/<int:category_id>/events/api/JSON')
 def showApiEventsJSON(category_id):
+    """JSON API endpoints"""
     events = session.query(Event).filter_by(category_id=category_id).all()
     return jsonify(Events=[i.serialize for i in events])
 
@@ -220,14 +310,19 @@ def showApiEventsJSON(category_id):
 # XML API
 @app.route('/api/api.xml')
 def showAllasApiXML():
+    """XML API endpoints"""
     categories = session.query(Category)
     events = session.query(Event)
-    return render_template('api.xml', categories=categories, events=events)
+    response = make_response(render_template('api.xml', categories=categories,
+               events=events), 200)
+    response.headers['Content-Type'] = 'application/xml'
+    return response
 
 # Home
 @app.route('/')
 @app.route('/all')
 def home():
+    """Shows all events of all categories ordered by the latest added events"""
     categories = session.query(Category)
     events = session.query(Event).order_by(desc(Event.id))
 
@@ -242,6 +337,7 @@ def home():
 
 @app.route('/categories/<int:category_id>/events')
 def showEvents(category_id):
+    """ Shows all events of a selected categories """
     category = session.query(Category).filter_by(id=category_id).one()
     events = session.query(Event).filter_by(category_id=category_id)
     if 'username' not in login_session:
@@ -259,6 +355,7 @@ def showEvents(category_id):
 
 @app.route('/categories/<int:category_id>/add', methods=['GET', 'POST'])
 def addEvent(category_id):
+    """ Adds an event only for logged user """
     if 'username' not in login_session:
         return redirect('/login')
     if request.method == 'POST':
@@ -273,7 +370,7 @@ def addEvent(category_id):
         upload_file = request.files['local_image']
         imgfilename = os.path.join(app.config['UPLOAD_FOLDER'],
                                    upload_file.filename)
-
+        # check for an uploaded image or URL image
         if use_local_image:
             if not upload_file or not allowed_file(upload_file.filename):
                 flash('not successfully created due to wrong image file')
@@ -303,13 +400,16 @@ def addEvent(category_id):
 @app.route('/categories/<int:category_id>/<int:event_id>/edit',
            methods=['GET', 'POST'])
 def editEvent(category_id, event_id):
+    """Edits and updates event database"""
     editedEvent = session.query(Event).filter_by(id=event_id).one()
     if 'username' not in login_session:
         return redirect('/login')
+    # assure only for logged user
     if editedEvent.user_id != login_session['user_id']:
         return "<script>function myFunction() {alert('You are not authorized \
             to edit this event. Please create an admin account in order to \
             edit.');}</script><body onload='myFunction()''>"
+    
     if request.method == 'POST':
         use_local_image = False
         # check if an URL or a local image is given
@@ -323,6 +423,9 @@ def editEvent(category_id, event_id):
         upload_file = request.files['local_image']
         imgfilename = os.path.join(app.config['UPLOAD_FOLDER'],
                                    upload_file.filename)
+
+        # if a local image uploaded, the new image path will be updated
+        # and the new image has to be saved
         if use_local_image:
             if not upload_file or not allowed_file(upload_file.filename):
                 print "no upload file or not allowed file"
@@ -335,6 +438,7 @@ def editEvent(category_id, event_id):
         else:
             editedEvent.image = request.form['url_image']
 
+        # Update database
         if request.form['name']:
             editedEvent.name = request.form['name']
         if request.form['description']:
@@ -354,9 +458,12 @@ def editEvent(category_id, event_id):
 @app.route('/categories/<int:category_id>/<int:event_id>/delete',
            methods=['GET', 'POST'])
 def deleteEvent(category_id, event_id):
+    """delete event only by logged user."""
     eventToDelete = session.query(Event).filter_by(id=event_id).one()
     if 'username' not in login_session:
         return redirect('/login')
+
+    # prevent cross-site request forgeries (CSRF)
     if eventToDelete.user_id != login_session['user_id']:
         return "<script>function myFunction() {alert('You are not authorized \
             to delete this event. Please create an admin account in order to \
@@ -373,12 +480,13 @@ def deleteEvent(category_id, event_id):
                                category_id=category_id, event=eventToDelete)
 
 
-# image upload functionality
 def allowed_file(filename):
+    """image upload functionality"""
     return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
 def upload_file():
+    """upload image filename"""
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
@@ -387,9 +495,10 @@ def upload_file():
             return redirect(url_for('uploaded_file', filename=filename))
 
 
-# Disconnect based on provider
+
 @app.route('/disconnect')
 def disconnect():
+    """Disconnect based on provider. route for logout"""
     if 'provider' in login_session:
         if login_session['provider'] == 'google':
             gdisconnect()

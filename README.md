@@ -1,7 +1,7 @@
-Nanodegree P2 Tournament Results
+Nanodegree P§ Item Catalog
 ================================
 
-Ceating a web application using flask and SQLite
+Creating a web application using flask, SQLite and OAuthentification
 
 Requirements
 ------------
