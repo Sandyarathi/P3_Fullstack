@@ -13,6 +13,8 @@ Base = declarative_base()
 
 
 class User(Base):
+    """User class for user database. A user can create an event but not 
+    a category """
     __tablename__ = 'user'
 
     id = Column(Integer, primary_key=True)
@@ -22,6 +24,7 @@ class User(Base):
 
 
 class Category(Base):
+    """Category class for event category database with the serialize property"""
     __tablename__ = 'category'
 
     id = Column(Integer, primary_key=True)
@@ -37,6 +40,7 @@ class Category(Base):
 
 
 class Event(Base):
+    """Event class for event database with serialize property."""
     __tablename__ = 'event'
 
     name = Column(String(80), nullable=False)
@@ -61,7 +65,7 @@ class Event(Base):
             'image': self.image
         }
 
-
+# Using SQLite database instead of Postgresql
 engine = create_engine('sqlite:///eventlist.db')
 
 Base.metadata.create_all(engine)

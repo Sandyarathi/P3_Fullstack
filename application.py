@@ -67,6 +67,7 @@ def showLogin():
     return render_template('login.html', STATE=state)
 
 # Facebook login connection
+''' Facebook login function is commented because it does not works on html side
 @app.route('/fbconnect', methods=['POST'])
 def fbconnect():
     api_version = '2.4'
@@ -148,7 +149,7 @@ def fbdisconnect():
     h = httplib2.Http()
     result = h.request(url, 'DELETE')[1]
     return "you have been logged out"
-
+'''
 # Google Login connection function
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
